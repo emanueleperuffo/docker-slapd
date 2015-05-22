@@ -1,0 +1,59 @@
+#!/bin/bash
+set -e
+
+chown -R openldap "/var/lib/ldap"
+
+BOOTSTRAPPED="/var/lib/ldap/.bootstrapped"
+
+if [ ! -e $BOOTSTRAPPED ]; then
+	get_base_dn() {
+		BASE_DN=""
+		IFS='.' read -ra BASE_DN_TABLE <<< "$LDAP_DOMAIN"
+		for i in "${BASE_DN_TABLE[@]}"; do
+			EXT="dc=$i,"
+			BASE_DN=$BASE_DN$EXT
+		done
+
+		BASE_DN=${BASE_DN::-1}
+	}
+
+	is_new_schema() {
+		local COUNT=$(ldapsearch -Q -Y EXTERNAL -H ldapi:/// -b cn=schema,cn=config cn | grep -c $1)
+		if [ "$COUNT" -eq 0 ]; then
+			echo 1
+		else
+			echo 0
+		fi
+	}
+
+	slapd -h "ldapi:///" -u openldap -g openldap
+
+	ldapmodify -Y EXTERNAL -Q -H ldapi:/// \
+		<<-EOF
+		dn: olcDatabase={1}mdb,cn=config
+		changetype: modify
+		delete: olcAccess
+		-
+		add: olcAccess
+		olcAccess: {0}to attrs=userPassword,shadowLastChange by self write by anonymous auth by dn="cn=admin,${BASE_DN}" write by * none
+		-
+		add: olcAccess
+		olcAccess: {1}to dn.base="" by * read
+		-
+		add: olcAccess
+		olcAccess: {2}to * by self write by dn="cn=admin,${BASE_DN}" write by * none
+		-
+		EOF
+
+	# add ppolicy schema if not already exists
+	ADD_PPOLICY=$(is_new_schema ppolicy)
+	if [ "$ADD_PPOLICY" -eq 1 ]; then
+		ldapadd -c -Y EXTERNAL -Q -H ldapi:/// -f /etc/ldap/schema/ppolicy.ldif
+	fi
+
+	pkill -INT -F /run/slapd/slapd.pid
+
+	touch $BOOTSTRAPPED
+fi
+
+exec /usr/sbin/slapd -h "ldap:/// ldapi:///" -u openldap -g openldap -d -1 -s syslog-level
