@@ -1,8 +1,6 @@
 #!/bin/bash
 set -e
 
-chown -R openldap "/var/lib/ldap"
-
 BOOTSTRAPPED="/var/lib/ldap/.bootstrapped"
 
 if [ ! -e $BOOTSTRAPPED ]; then
