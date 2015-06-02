@@ -13,6 +13,6 @@ RUN /build/prepare.sh && \
 
 VOLUME ["/var/lib/ldap", "/var/backups"]
 
-EXPOSE 389
+EXPOSE 389 636
 
 CMD ["/sbin/my_init"]

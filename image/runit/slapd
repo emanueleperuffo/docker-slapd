@@ -44,23 +44,24 @@ if [ ! -e $BOOTSTRAPPED ]; then
 	dpkg-reconfigure -f noninteractive slapd
 
 	slapd -h "ldapi:///" -u openldap -g openldap
+	
+	get_base_dn
 
-	ldapmodify -Y EXTERNAL -Q -H ldapi:/// \
-		<<-EOF
-		dn: olcDatabase={1}mdb,cn=config
-		changetype: modify
-		delete: olcAccess
-		-
-		add: olcAccess
-		olcAccess: {0}to attrs=userPassword,shadowLastChange by self write by anonymous auth by dn="cn=admin,${BASE_DN}" write by * none
-		-
-		add: olcAccess
-		olcAccess: {1}to dn.base="" by * read
-		-
-		add: olcAccess
-		olcAccess: {2}to * by self write by dn="cn=admin,${BASE_DN}" write by * none
-		-
-		EOF
+	cat <<-EOF | ldapmodify -Y EXTERNAL -Q -H ldapi:///
+	dn: olcDatabase={1}mdb,cn=config
+	changetype: modify
+	delete: olcAccess
+	-
+	add: olcAccess
+	olcAccess: {0}to attrs=userPassword,shadowLastChange by self write by anonymous auth by dn="cn=admin,${BASE_DN}" write by * none
+	-
+	add: olcAccess
+	olcAccess: {1}to dn.base="" by * read
+	-
+	add: olcAccess
+	olcAccess: {2}to * by self write by dn="cn=admin,$BASE_DN" write by * none
+	-
+	EOF
 
 	# add ppolicy schema if not already exists
 	ADD_PPOLICY=$(is_new_schema ppolicy)
@@ -73,4 +74,4 @@ if [ ! -e $BOOTSTRAPPED ]; then
 	touch $BOOTSTRAPPED
 fi
 
-exec /usr/sbin/slapd -h "ldap:/// ldapi:///" -u openldap -g openldap -d -1 -s syslog-level
+exec /usr/sbin/slapd -h "ldap:///" -u openldap -g openldap -d -1 -s syslog-level
