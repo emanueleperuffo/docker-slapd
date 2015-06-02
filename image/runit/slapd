@@ -74,4 +74,4 @@ if [ ! -e $BOOTSTRAPPED ]; then
 	touch $BOOTSTRAPPED
 fi
 
-exec /usr/sbin/slapd -h "ldap:///" -u openldap -g openldap -d -1
+exec /usr/sbin/slapd -h "ldap:///" -u openldap -g openldap -d 0
