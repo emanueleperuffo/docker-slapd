@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+ulimit -n 1024
+
 BOOTSTRAPPED="/var/lib/ldap/.bootstrapped"
 
 if [ ! -e $BOOTSTRAPPED ]; then
