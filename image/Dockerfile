@@ -12,7 +12,7 @@ RUN /build/prepare.sh && \
 	/build/services.sh && \
 	/build/cleanup.sh
 
-VOLUME ["/var/lib/ldap", "/var/backups"]
+VOLUME ["/var/lib/ldap", "/etc/ldap/slapd.d"]
 
 EXPOSE 389
 
