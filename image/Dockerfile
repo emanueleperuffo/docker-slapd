@@ -6,6 +6,7 @@ ADD . /build
 
 ENV LDAP_DOMAIN example.com
 ENV LDAP_ORGANIZATION example.com
+ENV LDAP_ADMIN_PASSWORD pass
 
 RUN /build/prepare.sh && \
 	/build/services.sh && \
